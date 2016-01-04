@@ -1,7 +1,7 @@
 /**
- * Knight Rider (actually K.I.T.T.) 8xLED scanner 
+ * Knight Rider (actually K.I.T.T.) 8xLED scanner bar
  * 
- * Petr Stehlik 2015
+ * Petr Stehlik in December 2015
  * licensed under the GPLv3
  */
 
@@ -42,18 +42,18 @@ void loop()
             x = 1;
         }
     }
-    delay(200);
+    delay(72);  // this is the exact speed of the original Knight Rider intro (on the desert)
 }
 
 void myIrq(void)
 {
     static byte counter = 0;
     if (!counter++)
-        myDosvit();
-    myPwm();
+        fadeOutEffect();
+    softPWM();
 }
 
-void myPwm(void)
+void softPWM(void)
 {
     static byte counter = 0;
     static byte shadows[PWM_PINS];
@@ -78,19 +78,14 @@ void myPwm(void)
     PORTB = (PORTB & ~0x03) | ~(state >> 6);
 }
 
-void myDosvit(void)
+void fadeOutEffect(void)
 {
     for(byte i = 0; i < PWM_PINS; i++) {
-        if (leds[i]) {
-            pwm_regs[i] = 255;
+        if (leds[i] && pwm_regs[i] != 255) {
+            pwm_regs[i] = (pwm_regs[i] << 2) | 0b11;  // slowly light up (in 4 steps)
         }
-        else {
-            if (pwm_regs[i]) {
-                int x = pwm_regs[i] * 7 / 8;
-                if (x < 0)
-                    x = 0;
-                pwm_regs[i] = x;
-            }
+        else if (!leds[i] && pwm_regs[i]) {
+            pwm_regs[i] = pwm_regs[i] * 15 / 16; // very slowly fade out (in 54 steps)
         }
     }   
 }
