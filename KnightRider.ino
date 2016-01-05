@@ -106,7 +106,9 @@ void fadeOutEffect(void)
 {
     for(byte i = 0; i < PWM_PINS; i++) {
         if (leds[i] && pwm_regs[i] != 255) {
-            pwm_regs[i] = (pwm_regs[i] << 2) | 0b11;  // slowly light up (in 4 steps)
+            unsigned x = pwm_regs[i] + 32;  // quickly light up (in 4 steps)
+            if (x > 255) x = 255;
+            pwm_regs[i] = x;
         }
         else if (!leds[i] && pwm_regs[i]) {
             pwm_regs[i] = pwm_regs[i] * 15 / 16; // very slowly fade out (in 54 steps)
