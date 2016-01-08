@@ -20,6 +20,7 @@ volatile bool leds[PWM_PINS];
 volatile byte pwm_regs[PWM_PINS];
 volatile byte kittMode;
 volatile byte kittIndex;
+volatile byte kittSpeed;
 
 void setup()
 {
@@ -28,7 +29,7 @@ void setup()
     }
     LEDoff();
 
-    setKittMode(2);
+    setKittMode(2, 17);
 
     Timer1.initialize(64);  // 15625 Hz => 8bit PWM 61 Hz refresh rate
     Timer1.attachInterrupt(myIrq);
@@ -43,16 +44,19 @@ void LEDoff()
 
 void loop()
 {
-    nextKittStep();
-    delay(72);  // this is the exact speed of the original Knight Rider intro (on the desert)
+    delay(8000);
+    setKittMode(2, random(17, 170));
 }
 
-void setKittMode(byte mode)
+void setKittMode(byte mode, byte speed)
 {
-    kittMode = -1;
-    kittIndex = 0;
-    LEDoff();
-    kittMode = mode;
+    if (mode != kittMode) {
+        kittMode = -1;
+        kittIndex = 0;
+        LEDoff();
+        kittMode = mode;
+    }
+    kittSpeed = speed;
 }
 
 void nextKittStep()
@@ -97,9 +101,21 @@ void nextKittStep()
 void myIrq(void)
 {
     static byte counter = 0;
+    if (counter % 64 == 0)
+        autoScan();
     if (!counter++)
         fadeOutEffect();
     softPWM();
+}
+
+void autoScan(void)
+{
+    static byte shadow;
+    if (!shadow) {
+        shadow = kittSpeed;       
+    }
+    if (--shadow == 0)
+        nextKittStep();
 }
 
 void softPWM(void)
